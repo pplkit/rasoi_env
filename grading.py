@@ -43,7 +43,7 @@ class TaskGrader:
         reward = 0.0
 
         # Check for correct substitutions (Task 2)
-        if self.task_config.substitution_rules and action.action_type.value == "add_ingredient":
+        if self.task_config.substitution_rules and action.action_type == "add_ingredient":
             ingredient = action.ingredient
             for original, substitute in self.task_config.substitution_rules.items():
                 if ingredient == substitute:
@@ -67,7 +67,7 @@ class TaskGrader:
             reward += 0.1
 
         # Bonus for serving a dish
-        if action.action_type.value == "serve":
+        if action.action_type == "serve":
             dish_name = action.dish_name or ""
             for recipe in self.task_config.recipes:
                 if recipe.dish_name == dish_name or dish_name == "":
@@ -83,7 +83,7 @@ class TaskGrader:
 
     def _match_step(self, action: RasoiAction) -> bool:
         """Try to match action against an unmatched recipe step."""
-        action_type = action.action_type.value
+        action_type = action.action_type  # already a string (Literal type)
 
         for idx, recipe_idx, step in self._step_map:
             if idx in self.matched_steps:

@@ -1,94 +1,35 @@
 """Pydantic models for the Rasoi (Indian Cooking) environment."""
 
-from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from openenv.core.env_server.types import Action, Observation, State
 from pydantic import Field, model_validator
 
 
-class ActionType(str, Enum):
-    ADD_INGREDIENT = "add_ingredient"
-    SET_HEAT = "set_heat"
-    COOK = "cook"
-    STIR = "stir"
-    CHOP = "chop"
-    MIX = "mix"
-    TRANSFER = "transfer"
-    SERVE = "serve"
-    CHECK_STATUS = "check_status"
-    WAIT = "wait"
+ActionType = Literal[
+    "add_ingredient", "set_heat", "cook", "stir", "chop",
+    "mix", "transfer", "serve", "check_status", "wait",
+]
 
+HeatLevel = Literal["off", "low", "medium", "high"]
 
-class HeatLevel(str, Enum):
-    OFF = "off"
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
+ChopStyle = Literal["dice", "mince", "slice", "julienne"]
 
+Ingredient = Literal[
+    "water", "ginger", "cinnamon_stick", "cardamom", "cloves",
+    "tea_leaves", "milk", "oat_milk", "sugar", "salt",
+    "flour", "baking_powder", "eggs", "butter", "coconut_oil",
+    "moong_dal", "turmeric", "ghee", "cumin_seeds", "garlic",
+    "green_chilies", "cilantro", "rice", "oil", "mustard_seeds",
+    "onion", "potato", "cauliflower", "red_chili_powder",
+]
 
-class ChopStyle(str, Enum):
-    DICE = "dice"
-    MINCE = "mince"
-    SLICE = "slice"
-    JULIENNE = "julienne"
+Vessel = Literal[
+    "saucepan", "cup", "mixing_bowl", "wet_bowl", "pan", "plate",
+    "pot", "rice_pot", "small_pan", "wok", "cutting_board",
+]
 
-
-class Ingredient(str, Enum):
-    """All available ingredients across all tasks."""
-    WATER = "water"
-    GINGER = "ginger"
-    CINNAMON_STICK = "cinnamon_stick"
-    CARDAMOM = "cardamom"
-    CLOVES = "cloves"
-    TEA_LEAVES = "tea_leaves"
-    MILK = "milk"
-    OAT_MILK = "oat_milk"
-    SUGAR = "sugar"
-    SALT = "salt"
-    FLOUR = "flour"
-    BAKING_POWDER = "baking_powder"
-    EGGS = "eggs"
-    BUTTER = "butter"
-    COCONUT_OIL = "coconut_oil"
-    MOONG_DAL = "moong_dal"
-    TURMERIC = "turmeric"
-    GHEE = "ghee"
-    CUMIN_SEEDS = "cumin_seeds"
-    GARLIC = "garlic"
-    GREEN_CHILIES = "green_chilies"
-    CILANTRO = "cilantro"
-    RICE = "rice"
-    OIL = "oil"
-    MUSTARD_SEEDS = "mustard_seeds"
-    ONION = "onion"
-    POTATO = "potato"
-    CAULIFLOWER = "cauliflower"
-    RED_CHILI_POWDER = "red_chili_powder"
-
-
-class Vessel(str, Enum):
-    """All available vessels across all tasks."""
-    SAUCEPAN = "saucepan"
-    CUP = "cup"
-    MIXING_BOWL = "mixing_bowl"
-    WET_BOWL = "wet_bowl"
-    PAN = "pan"
-    PLATE = "plate"
-    POT = "pot"
-    RICE_POT = "rice_pot"
-    SMALL_PAN = "small_pan"
-    WOK = "wok"
-    CUTTING_BOARD = "cutting_board"
-
-
-class DishName(str, Enum):
-    """All dish names across all tasks."""
-    MASALA_CHAI = "masala_chai"
-    PANCAKES = "pancakes"
-    DAL = "dal"
-    JEERA_RICE = "jeera_rice"
-    ALOO_GOBI = "aloo_gobi"
+DishName = Literal["masala_chai", "pancakes", "dal", "jeera_rice", "aloo_gobi"]
 
 
 class RasoiAction(Action):
@@ -108,44 +49,44 @@ class RasoiAction(Action):
     @model_validator(mode="after")
     def validate_action_params(self) -> "RasoiAction":
         t = self.action_type
-        if t == ActionType.ADD_INGREDIENT:
+        if t == "add_ingredient":
             if not self.ingredient:
                 raise ValueError("add_ingredient requires 'ingredient'")
             if not self.vessel:
                 raise ValueError("add_ingredient requires 'vessel'")
-        elif t == ActionType.SET_HEAT:
+        elif t == "set_heat":
             if not self.vessel:
                 raise ValueError("set_heat requires 'vessel'")
             if self.heat_level is None:
                 raise ValueError("set_heat requires 'heat_level'")
-        elif t == ActionType.COOK:
+        elif t == "cook":
             if not self.vessel:
                 raise ValueError("cook requires 'vessel'")
             if self.duration_minutes is None:
                 raise ValueError("cook requires 'duration_minutes'")
-        elif t == ActionType.STIR:
+        elif t == "stir":
             if not self.vessel:
                 raise ValueError("stir requires 'vessel'")
-        elif t == ActionType.CHOP:
+        elif t == "chop":
             if not self.ingredient:
                 raise ValueError("chop requires 'ingredient'")
             if self.chop_style is None:
                 raise ValueError("chop requires 'chop_style'")
-        elif t == ActionType.MIX:
+        elif t == "mix":
             if not self.vessel:
                 raise ValueError("mix requires 'vessel'")
-        elif t == ActionType.TRANSFER:
+        elif t == "transfer":
             if not self.from_vessel:
                 raise ValueError("transfer requires 'from_vessel'")
             if not self.to_vessel:
                 raise ValueError("transfer requires 'to_vessel'")
-        elif t == ActionType.SERVE:
+        elif t == "serve":
             if not self.vessel:
                 raise ValueError("serve requires 'vessel'")
-        elif t == ActionType.CHECK_STATUS:
+        elif t == "check_status":
             if not self.vessel:
                 raise ValueError("check_status requires 'vessel'")
-        elif t == ActionType.WAIT:
+        elif t == "wait":
             if self.duration_minutes is None:
                 raise ValueError("wait requires 'duration_minutes'")
         return self

@@ -6,10 +6,10 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
 try:
-    from .models import ActionType, RasoiAction, HeatLevel
+    from .models import RasoiAction
     from .recipes import Recipe, TaskConfig
 except ImportError:
-    from models import ActionType, RasoiAction, HeatLevel
+    from models import RasoiAction
     from recipes import Recipe, TaskConfig
 
 
@@ -139,21 +139,21 @@ class Kitchen:
     def execute(self, action: RasoiAction) -> str:
         """Execute an action and return feedback string."""
         self.action_log.append({
-            "action_type": action.action_type.value,
+            "action_type": action.action_type,
             "time": self.current_time,
         })
 
         handler = {
-            ActionType.ADD_INGREDIENT: self._add_ingredient,
-            ActionType.SET_HEAT: self._set_heat,
-            ActionType.COOK: self._cook,
-            ActionType.STIR: self._stir,
-            ActionType.CHOP: self._chop,
-            ActionType.MIX: self._mix,
-            ActionType.TRANSFER: self._transfer,
-            ActionType.SERVE: self._serve,
-            ActionType.CHECK_STATUS: self._check_status,
-            ActionType.WAIT: self._wait,
+            "add_ingredient": self._add_ingredient,
+            "set_heat": self._set_heat,
+            "cook": self._cook,
+            "stir": self._stir,
+            "chop": self._chop,
+            "mix": self._mix,
+            "transfer": self._transfer,
+            "serve": self._serve,
+            "check_status": self._check_status,
+            "wait": self._wait,
         }.get(action.action_type)
 
         if handler is None:
