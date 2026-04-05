@@ -485,14 +485,15 @@ DAL_RECIPE = Recipe(
         ),
     ],
     cook_thresholds={
-        "moong_dal": (15, 20, 28),
+        # Thresholds account for parallel cooking — total time ~30 min
+        "moong_dal": (15, 40, 60),
         "water": (1, 999, 999),
         "turmeric": (1, 999, 999),
         "salt": (1, 999, 999),
-        "ghee": (1, 3, 5),
-        "cumin_seeds": (1, 3, 5),
-        "garlic": (1, 3, 5),
-        "green_chilies": (1, 4, 6),
+        "ghee": (1, 8, 15),
+        "cumin_seeds": (1, 8, 15),
+        "garlic": (1, 8, 15),
+        "green_chilies": (1, 10, 18),
         "cilantro": (1, 999, 999),
     },
 )
@@ -586,10 +587,11 @@ RICE_RECIPE = Recipe(
         ),
     ],
     cook_thresholds={
-        "rice": (12, 18, 25),
+        # Thresholds account for parallel cooking — rice pot on low heat for extended time
+        "rice": (6, 30, 50),
         "water": (1, 999, 999),
-        "oil": (1, 5, 8),
-        "cumin_seeds": (1, 3, 5),
+        "oil": (1, 15, 25),
+        "cumin_seeds": (1, 15, 25),
         "salt": (1, 999, 999),
     },
 )
@@ -730,12 +732,13 @@ SABZI_RECIPE = Recipe(
         ),
     ],
     cook_thresholds={
-        "oil": (1, 5, 8),
-        "mustard_seeds": (1, 3, 5),
-        "cumin_seeds": (1, 3, 5),
-        "onion": (3, 10, 15),
-        "potato": (10, 18, 25),
-        "cauliflower": (8, 15, 22),
+        # Thresholds for wok — on high then medium for ~16 min total
+        "oil": (1, 20, 30),
+        "mustard_seeds": (1, 15, 25),
+        "cumin_seeds": (1, 15, 25),
+        "onion": (3, 25, 40),
+        "potato": (10, 30, 45),
+        "cauliflower": (8, 28, 42),
         "turmeric": (1, 999, 999),
         "red_chili_powder": (1, 999, 999),
         "salt": (1, 999, 999),

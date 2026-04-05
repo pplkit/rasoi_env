@@ -21,19 +21,20 @@ class TaskGrader:
         self.task_config = task_config
         self.matched_steps: List[int] = []  # indices of matched recipe steps
         self.total_steps = sum(len(r.steps) for r in task_config.recipes)
-        self.substitutions_made: Set[str] = set()  # track correct substitutions
-        self.forbidden_used: Set[str] = set()  # track forbidden ingredient usage
+        self.substitutions_made: Set[str] = set()
+        self.forbidden_used: Set[str] = set()
         self.burn_count: int = 0
         self._burned_already: Set[str] = set()
+        # Each entry: (global_idx, recipe_idx, step)
         self._step_map = self._build_step_map()
 
-    def _build_step_map(self) -> List[Tuple[int, RecipeStep]]:
-        """Flatten all recipe steps with global indices."""
+    def _build_step_map(self) -> List[Tuple[int, int, RecipeStep]]:
+        """Flatten all recipe steps with global indices and recipe index."""
         steps = []
         idx = 0
-        for recipe in self.task_config.recipes:
+        for recipe_idx, recipe in enumerate(self.task_config.recipes):
             for step in recipe.steps:
-                steps.append((idx, step))
+                steps.append((idx, recipe_idx, step))
                 idx += 1
         return steps
 
@@ -44,7 +45,6 @@ class TaskGrader:
         # Check for correct substitutions (Task 2)
         if self.task_config.substitution_rules and action.action_type.value == "add_ingredient":
             ingredient = action.ingredient
-            # Check if agent correctly used a substitute
             for original, substitute in self.task_config.substitution_rules.items():
                 if ingredient == substitute:
                     self.substitutions_made.add(original)
@@ -71,9 +71,8 @@ class TaskGrader:
             dish_name = action.dish_name or ""
             for recipe in self.task_config.recipes:
                 if recipe.dish_name == dish_name or dish_name == "":
-                    # Check if dish is reasonably complete
                     recipe_matched = sum(
-                        1 for idx, _ in self._step_map
+                        1 for idx, _, _ in self._step_map
                         if idx in self.matched_steps
                     )
                     if recipe_matched > 0:
@@ -86,29 +85,19 @@ class TaskGrader:
         """Try to match action against an unmatched recipe step."""
         action_type = action.action_type.value
 
-        for idx, step in self._step_map:
+        for idx, recipe_idx, step in self._step_map:
             if idx in self.matched_steps:
                 continue
             if step.expected_action != action_type:
                 continue
 
-            # Check critical ordering
+            # Check critical ordering — only within the SAME recipe
             if step.critical_order is not None:
-                # All steps with lower critical_order must already be matched
-                for other_idx, other_step in self._step_map:
-                    if (
-                        other_step.critical_order is not None
-                        and other_step.critical_order < step.critical_order
-                        and other_idx not in self.matched_steps
-                    ):
-                        # A prerequisite step hasn't been matched yet — skip
-                        continue  # continue inner loop; but we need to break logic
-
-                # Simplified: check if any prerequisite is unmatched
                 prerequisites_met = True
-                for other_idx, other_step in self._step_map:
+                for other_idx, other_recipe_idx, other_step in self._step_map:
                     if (
-                        other_step.critical_order is not None
+                        other_recipe_idx == recipe_idx  # same recipe only
+                        and other_step.critical_order is not None
                         and other_step.critical_order < step.critical_order
                         and other_idx not in self.matched_steps
                     ):
@@ -124,9 +113,7 @@ class TaskGrader:
                 if actual_val is None:
                     params_match = False
                     break
-                # Handle enum values
                 actual_str = actual_val.value if hasattr(actual_val, "value") else str(actual_val)
-                # Allow substitutions
                 if actual_str != expected_val:
                     # Check if this is a valid substitution
                     is_substitution = False
@@ -164,28 +151,19 @@ class TaskGrader:
         """Task 1: Masala Chai — step completion + dish served."""
         step_score = len(self.matched_steps) / max(self.total_steps, 1)
         dish_served = 1.0 if "masala_chai" in kitchen.completed_dishes else 0.0
-
-        # Penalty for burned items
         burn_penalty = min(self.burn_count * 0.1, 0.3)
-
         score = 0.7 * step_score + 0.3 * dish_served - burn_penalty
         return max(0.0, min(1.0, score))
 
     def _grade_task2(self, kitchen: Kitchen) -> float:
         """Task 2: Dairy-Free Pancakes — substitution + steps + dish."""
-        # Substitution score
         total_subs = len(self.task_config.substitution_rules)
         correct_subs = len(self.substitutions_made)
         forbidden_penalty = len(self.forbidden_used) * 0.15
         substitution_score = max(0.0, (correct_subs / max(total_subs, 1)) - forbidden_penalty)
-
-        # Step score
         step_score = len(self.matched_steps) / max(self.total_steps, 1)
-
-        # Dish score
         dish_served = 1.0 if "pancakes" in kitchen.completed_dishes else 0.0
         burn_penalty = min(self.burn_count * 0.15, 0.3)
-
         score = 0.3 * substitution_score + 0.4 * step_score + 0.3 * dish_served - burn_penalty
         return max(0.0, min(1.0, score))
 
@@ -194,17 +172,11 @@ class TaskGrader:
         expected_dishes = {"dal", "jeera_rice", "aloo_gobi"}
         served = set(kitchen.completed_dishes)
 
-        # Per-dish score
         dish_scores = []
         for dish in expected_dishes:
-            if dish in served:
-                # Check if dish has burned contents
-                dish_scores.append(1.0)
-            else:
-                dish_scores.append(0.0)
+            dish_scores.append(1.0 if dish in served else 0.0)
         avg_dish_score = sum(dish_scores) / len(dish_scores) if dish_scores else 0.0
 
-        # Timing score
         timing_score = 0.0
         served_expected = served.intersection(expected_dishes)
         if len(served_expected) >= 2:
@@ -216,9 +188,6 @@ class TaskGrader:
             elif spread <= window + 10:
                 timing_score = max(0.0, 1.0 - (spread - window) / 10.0)
 
-        # No burn score
         no_burn_score = 1.0 if self.burn_count == 0 else 0.0
-
         score = 0.5 * avg_dish_score + 0.3 * timing_score + 0.2 * no_burn_score
         return max(0.0, min(1.0, score))
-
