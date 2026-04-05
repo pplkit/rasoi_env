@@ -11,12 +11,12 @@ ActionType = Literal[
     "mix", "transfer", "serve", "check_status", "wait",
 ]
 
-HeatLevel = Literal["off", "low", "medium", "high"]
+HeatLevel = Literal["off", "low", "medium", "high", ""]
 
-ChopStyle = Literal["dice", "mince", "slice", "julienne"]
+ChopStyle = Literal["dice", "mince", "slice", "julienne", ""]
 
 Ingredient = Literal[
-    "water", "ginger", "cinnamon_stick", "cardamom", "cloves",
+    "", "water", "ginger", "cinnamon_stick", "cardamom", "cloves",
     "tea_leaves", "milk", "oat_milk", "sugar", "salt",
     "flour", "baking_powder", "eggs", "butter", "coconut_oil",
     "moong_dal", "turmeric", "ghee", "cumin_seeds", "garlic",
@@ -25,26 +25,26 @@ Ingredient = Literal[
 ]
 
 Vessel = Literal[
-    "saucepan", "cup", "mixing_bowl", "wet_bowl", "pan", "plate",
+    "", "saucepan", "cup", "mixing_bowl", "wet_bowl", "pan", "plate",
     "pot", "rice_pot", "small_pan", "wok", "cutting_board",
 ]
 
-DishName = Literal["masala_chai", "pancakes", "dal", "jeera_rice", "aloo_gobi"]
+DishName = Literal["", "masala_chai", "pancakes", "dal", "jeera_rice", "aloo_gobi"]
 
 
 class RasoiAction(Action):
     """Action the agent can take in the kitchen."""
 
-    action_type: ActionType = Field(..., description="Type of cooking action")
-    ingredient: Optional[Ingredient] = Field(None, description="Ingredient name (for add_ingredient, chop)")
-    quantity: Optional[str] = Field(None, description="Quantity string e.g. '2 cups', '1 tsp'")
-    vessel: Optional[Vessel] = Field(None, description="Target vessel name")
-    heat_level: Optional[HeatLevel] = Field(None, description="Heat level (for set_heat)")
-    duration_minutes: Optional[int] = Field(None, ge=1, description="Duration in minutes (for cook, wait)")
-    chop_style: Optional[ChopStyle] = Field(None, description="How to chop (for chop)")
-    from_vessel: Optional[Vessel] = Field(None, description="Source vessel (for transfer)")
-    to_vessel: Optional[Vessel] = Field(None, description="Destination vessel (for transfer)")
-    dish_name: Optional[DishName] = Field(None, description="Name of dish being served (for serve)")
+    action_type: ActionType = Field(default="add_ingredient", description="Type of cooking action")
+    ingredient: Ingredient = Field(default="", description="Ingredient name (for add_ingredient, chop)")
+    quantity: str = Field(default="", description="Quantity string e.g. '2 cups', '1 tsp'")
+    vessel: Vessel = Field(default="", description="Target vessel name")
+    heat_level: HeatLevel = Field(default="", description="Heat level (for set_heat)")
+    duration_minutes: int = Field(default=0, ge=0, description="Duration in minutes (for cook, wait)")
+    chop_style: ChopStyle = Field(default="", description="How to chop (for chop)")
+    from_vessel: Vessel = Field(default="", description="Source vessel (for transfer)")
+    to_vessel: Vessel = Field(default="", description="Destination vessel (for transfer)")
+    dish_name: DishName = Field(default="", description="Name of dish being served (for serve)")
 
     @model_validator(mode="after")
     def validate_action_params(self) -> "RasoiAction":
@@ -57,12 +57,12 @@ class RasoiAction(Action):
         elif t == "set_heat":
             if not self.vessel:
                 raise ValueError("set_heat requires 'vessel'")
-            if self.heat_level is None:
+            if not self.heat_level:
                 raise ValueError("set_heat requires 'heat_level'")
         elif t == "cook":
             if not self.vessel:
                 raise ValueError("cook requires 'vessel'")
-            if self.duration_minutes is None:
+            if not self.duration_minutes:
                 raise ValueError("cook requires 'duration_minutes'")
         elif t == "stir":
             if not self.vessel:
@@ -70,7 +70,7 @@ class RasoiAction(Action):
         elif t == "chop":
             if not self.ingredient:
                 raise ValueError("chop requires 'ingredient'")
-            if self.chop_style is None:
+            if not self.chop_style:
                 raise ValueError("chop requires 'chop_style'")
         elif t == "mix":
             if not self.vessel:
@@ -87,7 +87,7 @@ class RasoiAction(Action):
             if not self.vessel:
                 raise ValueError("check_status requires 'vessel'")
         elif t == "wait":
-            if self.duration_minutes is None:
+            if not self.duration_minutes:
                 raise ValueError("wait requires 'duration_minutes'")
         return self
 
