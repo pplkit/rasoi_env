@@ -161,23 +161,28 @@ class Kitchen:
 
         return handler(action)
 
-    def _get_vessel(self, name: str) -> Optional[Vessel]:
-        return self.vessels.get(name)
+    def _val(self, v) -> str:
+        """Extract string value from enum or return as-is."""
+        return v.value if hasattr(v, "value") else str(v) if v else ""
+
+    def _get_vessel(self, name) -> Optional[Vessel]:
+        return self.vessels.get(self._val(name))
 
     def _add_ingredient(self, action: RasoiAction) -> str:
         vessel = self._get_vessel(action.vessel)
         if vessel is None:
-            return f"Error: Vessel '{action.vessel}' not found. Available: {list(self.vessels.keys())}"
+            return f"Error: Vessel '{self._val(action.vessel)}' not found. Available: {list(self.vessels.keys())}"
 
         ingredient = action.ingredient
+        ing_name = self._val(ingredient)
         if ingredient not in self.pantry:
-            return f"Error: '{ingredient}' not in pantry. Available: {list(self.pantry.keys())}"
+            return f"Error: '{ing_name}' not in pantry. Available: {list(self.pantry.keys())}"
 
         quantity = action.quantity or self.pantry[ingredient]
-        self.ingredients_used.append(ingredient)
+        self.ingredients_used.append(ing_name)
 
         ing_state = IngredientState(
-            name=ingredient,
+            name=ing_name,
             quantity=quantity,
             prepared="raw",
         )
@@ -186,24 +191,24 @@ class Kitchen:
         cutting_board = self._get_vessel("cutting_board")
         if cutting_board:
             for cb_ing in cutting_board.contents:
-                if cb_ing.name == ingredient and cb_ing.prepared == "chopped":
+                if cb_ing.name == ing_name and cb_ing.prepared == "chopped":
                     ing_state.prepared = "chopped"
                     ing_state.chop_style = cb_ing.chop_style
                     cutting_board.contents.remove(cb_ing)
                     break
 
         vessel.contents.append(ing_state)
-        return f"Added {quantity} of {ingredient} to {vessel.name}."
+        return f"Added {quantity} of {ing_name} to {vessel.name}."
 
     def _set_heat(self, action: RasoiAction) -> str:
         vessel = self._get_vessel(action.vessel)
         if vessel is None:
-            return f"Error: Vessel '{action.vessel}' not found."
+            return f"Error: Vessel '{self._val(action.vessel)}' not found."
         if not vessel.can_heat:
             return f"Error: {vessel.name} ({vessel.vessel_type}) cannot be heated."
 
         old_level = vessel.heat_level
-        vessel.heat_level = action.heat_level.value
+        vessel.heat_level = self._val(action.heat_level)
         return f"Set {vessel.name} heat from {old_level} to {vessel.heat_level}."
 
     def _cook(self, action: RasoiAction) -> str:
@@ -239,8 +244,9 @@ class Kitchen:
 
     def _chop(self, action: RasoiAction) -> str:
         ingredient = action.ingredient
+        ing_name = self._val(ingredient)
         if ingredient not in self.pantry:
-            return f"Error: '{ingredient}' not in pantry."
+            return f"Error: '{ing_name}' not in pantry."
 
         # Place chopped ingredient on cutting board (create one if needed)
         if "cutting_board" not in self.vessels:
@@ -250,15 +256,15 @@ class Kitchen:
 
         cutting_board = self.vessels["cutting_board"]
         ing_state = IngredientState(
-            name=ingredient,
+            name=ing_name,
             quantity=self.pantry[ingredient],
             prepared="chopped",
-            chop_style=action.chop_style.value if action.chop_style else "dice",
+            chop_style=self._val(action.chop_style) if action.chop_style else "dice",
         )
         cutting_board.contents.append(ing_state)
-        self.ingredients_used.append(ingredient)
-        style = action.chop_style.value if action.chop_style else "chopped"
-        return f"Chopped {ingredient} ({style}). It's on the cutting board."
+        self.ingredients_used.append(ing_name)
+        style = self._val(action.chop_style) if action.chop_style else "chopped"
+        return f"Chopped {ing_name} ({style}). It's on the cutting board."
 
     def _mix(self, action: RasoiAction) -> str:
         vessel = self._get_vessel(action.vessel)
@@ -276,9 +282,9 @@ class Kitchen:
         from_v = self._get_vessel(action.from_vessel)
         to_v = self._get_vessel(action.to_vessel)
         if from_v is None:
-            return f"Error: Source vessel '{action.from_vessel}' not found."
+            return f"Error: Source vessel '{self._val(action.from_vessel)}' not found."
         if to_v is None:
-            return f"Error: Destination vessel '{action.to_vessel}' not found."
+            return f"Error: Destination vessel '{self._val(action.to_vessel)}' not found."
         if not from_v.contents:
             return f"Error: {from_v.name} is empty."
 
@@ -295,7 +301,7 @@ class Kitchen:
         if not vessel.contents:
             return f"Error: {vessel.name} is empty, nothing to serve."
 
-        dish_name = action.dish_name or self._infer_dish_name(vessel)
+        dish_name = self._val(action.dish_name) if action.dish_name else self._infer_dish_name(vessel)
         if dish_name in self.completed_dishes:
             return f"Error: {dish_name} has already been served."
 

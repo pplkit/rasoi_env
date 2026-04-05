@@ -34,19 +34,76 @@ class ChopStyle(str, Enum):
     JULIENNE = "julienne"
 
 
+class Ingredient(str, Enum):
+    """All available ingredients across all tasks."""
+    WATER = "water"
+    GINGER = "ginger"
+    CINNAMON_STICK = "cinnamon_stick"
+    CARDAMOM = "cardamom"
+    CLOVES = "cloves"
+    TEA_LEAVES = "tea_leaves"
+    MILK = "milk"
+    OAT_MILK = "oat_milk"
+    SUGAR = "sugar"
+    SALT = "salt"
+    FLOUR = "flour"
+    BAKING_POWDER = "baking_powder"
+    EGGS = "eggs"
+    BUTTER = "butter"
+    COCONUT_OIL = "coconut_oil"
+    MOONG_DAL = "moong_dal"
+    TURMERIC = "turmeric"
+    GHEE = "ghee"
+    CUMIN_SEEDS = "cumin_seeds"
+    GARLIC = "garlic"
+    GREEN_CHILIES = "green_chilies"
+    CILANTRO = "cilantro"
+    RICE = "rice"
+    OIL = "oil"
+    MUSTARD_SEEDS = "mustard_seeds"
+    ONION = "onion"
+    POTATO = "potato"
+    CAULIFLOWER = "cauliflower"
+    RED_CHILI_POWDER = "red_chili_powder"
+
+
+class Vessel(str, Enum):
+    """All available vessels across all tasks."""
+    SAUCEPAN = "saucepan"
+    CUP = "cup"
+    MIXING_BOWL = "mixing_bowl"
+    WET_BOWL = "wet_bowl"
+    PAN = "pan"
+    PLATE = "plate"
+    POT = "pot"
+    RICE_POT = "rice_pot"
+    SMALL_PAN = "small_pan"
+    WOK = "wok"
+    CUTTING_BOARD = "cutting_board"
+
+
+class DishName(str, Enum):
+    """All dish names across all tasks."""
+    MASALA_CHAI = "masala_chai"
+    PANCAKES = "pancakes"
+    DAL = "dal"
+    JEERA_RICE = "jeera_rice"
+    ALOO_GOBI = "aloo_gobi"
+
+
 class RasoiAction(Action):
     """Action the agent can take in the kitchen."""
 
     action_type: ActionType = Field(..., description="Type of cooking action")
-    ingredient: Optional[str] = Field(None, description="Ingredient name (for add_ingredient, chop)")
+    ingredient: Optional[Ingredient] = Field(None, description="Ingredient name (for add_ingredient, chop)")
     quantity: Optional[str] = Field(None, description="Quantity string e.g. '2 cups', '1 tsp'")
-    vessel: Optional[str] = Field(None, description="Target vessel name")
+    vessel: Optional[Vessel] = Field(None, description="Target vessel name")
     heat_level: Optional[HeatLevel] = Field(None, description="Heat level (for set_heat)")
     duration_minutes: Optional[int] = Field(None, ge=1, description="Duration in minutes (for cook, wait)")
     chop_style: Optional[ChopStyle] = Field(None, description="How to chop (for chop)")
-    from_vessel: Optional[str] = Field(None, description="Source vessel (for transfer)")
-    to_vessel: Optional[str] = Field(None, description="Destination vessel (for transfer)")
-    dish_name: Optional[str] = Field(None, description="Name of dish being served (for serve)")
+    from_vessel: Optional[Vessel] = Field(None, description="Source vessel (for transfer)")
+    to_vessel: Optional[Vessel] = Field(None, description="Destination vessel (for transfer)")
+    dish_name: Optional[DishName] = Field(None, description="Name of dish being served (for serve)")
 
     @model_validator(mode="after")
     def validate_action_params(self) -> "RasoiAction":

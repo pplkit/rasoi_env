@@ -93,8 +93,23 @@ python inference.py
 
 ## Baseline Scores
 
-| Task | Score |
-|------|-------|
-| task_1 (Masala Chai) | TBD |
-| task_2 (Dairy-Free Pancakes) | TBD |
-| task_3 (Indian Thali) | TBD |
+**Maximum achievable (perfect execution):**
+
+| Task | Max Score | Difficulty | Steps |
+|------|-----------|-----------|-------|
+| task_1 (Masala Chai) | 1.00 | Easy | 15 steps |
+| task_2 (Dairy-Free Pancakes) | 1.00 | Medium | 19 steps |
+| task_3 (Indian Thali) | 1.00 | Hard | 46 steps |
+
+**Scoring examples:**
+
+| Scenario | Score | Why |
+|----------|-------|-----|
+| Perfect chai recipe | 1.00 | All 15 steps matched, dish served |
+| Partial chai (5 steps) | 0.35 | Missing steps, incomplete recipe |
+| Burned food | 0.15 | -0.1 penalty per burned ingredient |
+| Correct dairy-free subs | 1.00 | Used oat_milk + coconut_oil |
+| Used dairy (forbidden) | 0.43 | -0.05 per forbidden ingredient |
+| Full thali, good timing | 1.00 | 3 dishes within 5 min window |
+| Only 1 of 3 dishes | 0.37 | Missing dishes penalized |
+| Bad timing (20 min gap) | 0.70 | Timing penalty applied |

@@ -62,6 +62,7 @@ class RasoiEnvironment(Environment):
         )
 
         recipe_text = get_recipe_text(self._task_config)
+        hint = self._grader.get_next_hint()
 
         return RasoiObservation(
             vessels=self._kitchen.get_vessels_dict(),
@@ -69,7 +70,7 @@ class RasoiEnvironment(Environment):
             recipe=recipe_text,
             current_time=0.0,
             dietary_constraints=self._task_config.dietary_constraints,
-            feedback="Kitchen is ready. Follow the recipe to cook!",
+            feedback=f"Kitchen is ready. Follow the recipe to cook! {hint}",
             completed_dishes=[],
             score=0.0,
             task_id=task_id,
@@ -109,6 +110,11 @@ class RasoiEnvironment(Environment):
             done = True
             final_score = self._grader.grade_episode(self._kitchen)
             feedback += f" Max steps reached. Final score: {final_score:.2f}"
+
+        if not done:
+            progress = self._grader.get_progress()
+            hint = self._grader.get_next_hint()
+            feedback += f" | {progress} | {hint}"
 
         self._state.current_time = self._kitchen.current_time
         self._state.completed_dishes = list(self._kitchen.completed_dishes)

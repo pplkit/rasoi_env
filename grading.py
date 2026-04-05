@@ -135,6 +135,35 @@ class TaskGrader:
 
         return False
 
+    def get_next_hint(self) -> str:
+        """Return a hint about the next expected step."""
+        for idx, recipe_idx, step in self._step_map:
+            if idx in self.matched_steps:
+                continue
+            # Check prerequisites
+            prerequisites_met = True
+            for other_idx, other_recipe_idx, other_step in self._step_map:
+                if (
+                    other_recipe_idx == recipe_idx
+                    and other_step.critical_order is not None
+                    and step.critical_order is not None
+                    and other_step.critical_order < step.critical_order
+                    and other_idx not in self.matched_steps
+                ):
+                    prerequisites_met = False
+                    break
+            if prerequisites_met:
+                recipe_name = self.task_config.recipes[recipe_idx].name
+                return f"[Hint] {recipe_name}: {step.instruction}"
+        return "[Hint] All recipe steps matched! Serve your dish(es)."
+
+    def get_progress(self) -> str:
+        """Return progress summary."""
+        matched = len(self.matched_steps)
+        total = self.total_steps
+        pct = (matched / total * 100) if total > 0 else 0
+        return f"Progress: {matched}/{total} steps ({pct:.0f}%)"
+
     def grade_episode(self, kitchen: Kitchen) -> float:
         """Compute final normalized score (0.0 to 1.0)."""
         task_id = self.task_config.task_id
