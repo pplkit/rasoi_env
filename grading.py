@@ -164,25 +164,28 @@ class TaskGrader:
         pct = (matched / total * 100) if total > 0 else 0
         return f"Progress: {matched}/{total} steps ({pct:.0f}%)"
 
+    def _clamp_score(self, score: float) -> float:
+        """Clamp score to strictly between 0 and 1 — never exactly 0.0 or 1.0."""
+        return max(0.01, min(0.99, score))
+
     def grade_episode(self, kitchen: Kitchen) -> float:
-        """Compute final normalized score (0.0 to 1.0)."""
+        """Compute final normalized score strictly in (0, 1)."""
         task_id = self.task_config.task_id
 
         if task_id == "task_1":
-            return self._grade_task1(kitchen)
+            return self._clamp_score(self._grade_task1(kitchen))
         elif task_id == "task_2":
-            return self._grade_task2(kitchen)
+            return self._clamp_score(self._grade_task2(kitchen))
         elif task_id == "task_3":
-            return self._grade_task3(kitchen)
-        return 0.0
+            return self._clamp_score(self._grade_task3(kitchen))
+        return 0.01
 
     def _grade_task1(self, kitchen: Kitchen) -> float:
         """Task 1: Masala Chai — step completion + dish served."""
         step_score = len(self.matched_steps) / max(self.total_steps, 1)
         dish_served = 1.0 if "masala_chai" in kitchen.completed_dishes else 0.0
         burn_penalty = min(self.burn_count * 0.1, 0.3)
-        score = 0.7 * step_score + 0.3 * dish_served - burn_penalty
-        return max(0.0, min(1.0, score))
+        return 0.7 * step_score + 0.3 * dish_served - burn_penalty
 
     def _grade_task2(self, kitchen: Kitchen) -> float:
         """Task 2: Dairy-Free Pancakes — substitution + steps + dish."""
@@ -193,8 +196,7 @@ class TaskGrader:
         step_score = len(self.matched_steps) / max(self.total_steps, 1)
         dish_served = 1.0 if "pancakes" in kitchen.completed_dishes else 0.0
         burn_penalty = min(self.burn_count * 0.15, 0.3)
-        score = 0.3 * substitution_score + 0.4 * step_score + 0.3 * dish_served - burn_penalty
-        return max(0.0, min(1.0, score))
+        return 0.3 * substitution_score + 0.4 * step_score + 0.3 * dish_served - burn_penalty
 
     def _grade_task3(self, kitchen: Kitchen) -> float:
         """Task 3: Indian Thali — dishes + timing + no burns."""
@@ -218,5 +220,4 @@ class TaskGrader:
                 timing_score = max(0.0, 1.0 - (spread - window) / 10.0)
 
         no_burn_score = 1.0 if self.burn_count == 0 else 0.0
-        score = 0.5 * avg_dish_score + 0.3 * timing_score + 0.2 * no_burn_score
-        return max(0.0, min(1.0, score))
+        return 0.5 * avg_dish_score + 0.3 * timing_score + 0.2 * no_burn_score
