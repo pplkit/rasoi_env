@@ -72,11 +72,15 @@ class RasoiEnvironment(Environment):
             dietary_constraints=self._task_config.dietary_constraints,
             feedback=f"Kitchen is ready. Follow the recipe to cook! {hint}",
             completed_dishes=[],
-            score=0.0,
+            score=0.01,
             task_id=task_id,
             done=False,
-            reward=0.0,
+            reward=0.01,
         )
+
+    def _clamp(self, value: float) -> float:
+        """Clamp any score/reward to strictly (0, 1) — never exactly 0.0 or 1.0."""
+        return max(0.01, min(0.99, value))
 
     def step(
         self,
@@ -89,7 +93,8 @@ class RasoiEnvironment(Environment):
             return RasoiObservation(
                 feedback="Error: Environment not initialized. Call reset() first.",
                 done=True,
-                reward=0.0,
+                reward=0.01,
+                score=0.01,
             )
 
         self._state.step_count += 1
@@ -116,9 +121,17 @@ class RasoiEnvironment(Environment):
             hint = self._grader.get_next_hint()
             feedback += f" | {progress} | {hint}"
 
+        # Determine score and reward — always clamped to (0, 1)
+        if done:
+            clamped_score = self._clamp(final_score)
+            obs_reward = clamped_score
+        else:
+            clamped_score = self._clamp(self._cumulative_reward)
+            obs_reward = self._clamp(step_reward)
+
         self._state.current_time = self._kitchen.current_time
         self._state.completed_dishes = list(self._kitchen.completed_dishes)
-        self._state.score = final_score if done else self._cumulative_reward
+        self._state.score = clamped_score
         self._state.cumulative_reward = self._cumulative_reward
         self._state.vessels_summary = self._kitchen.get_vessels_dict()
 
@@ -130,10 +143,10 @@ class RasoiEnvironment(Environment):
             dietary_constraints=self._task_config.dietary_constraints,
             feedback=feedback,
             completed_dishes=list(self._kitchen.completed_dishes),
-            score=final_score if done else self._cumulative_reward,
+            score=clamped_score,
             task_id=self._task_config.task_id,
             done=done,
-            reward=step_reward,
+            reward=obs_reward,
         )
 
     @property
